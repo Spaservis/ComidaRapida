@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Página Alien</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: radial-gradient(ellipse at center, #0b0f1a, #000);
+      color: #00ffcc;
+      margin: 0;
+      padding: 20px;
+      background-attachment: fixed;
+    }
+
+    h1, h2, h3 {
+      text-align: center;
+      text-shadow: 0 0 8px #00ffcc;
+    }
+
+    form, .catalogo, #contenido-oculto {
+      background-color: rgba(0, 0, 0, 0.7);
+      border: 2px solid #00ffcc;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 30px auto;
+      box-shadow: 0 0 20px #00ffcc;
+      max-width: 600px;
+    }
+
+    label, input, select, textarea, button {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 1em;
+      border-radius: 10px;
+      border: none;
+      padding: 10px;
+      background-color: #1f1f2e;
+      color: #00ffcc;
+      box-shadow: inset 0 0 10px #00ffcc;
+    }
+
+    button {
+      background-color: #00ffcc;
+      color: #000;
+      font-weight: bold;
+      box-shadow: 0 0 12px #00ffcc;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #80ffdb;
+      box-shadow: 0 0 25px #80ffdb;
+    }
+
+    ul {
+      padding: 20px;
+      list-style-type: square;
+      color: #80ffdb;
+    }
+
+    .producto {
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid #80ffdb;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px #80ffdb;
+      transition: transform 0.3s;
+    }
+
+    .producto:hover {
+      transform: scale(1.03);
+    }
+
+    .producto img {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .producto h3 {
+      margin: 10px 0 5px;
+    }
+
+    .producto .precio {
+      font-weight: bold;
+      color: #00ffcc;
+    }
+
+    a {
+      color: #00ffcc;
+      text-decoration: underline;
+      cursor: pointer;
+      display: inline-block;
+      margin: 10px 0;
+    }
+
+    #contenido-oculto {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h2> Compra asistida, entregas cada hora</h2>
+<form id="formularioTurno">
+  <label>Nombre:<input type="text" id="nombre" required></label>
+  <label>Teléfono:<input type="tel" id="telefono" required></label>
+  <label>Descripción del pedido:<textarea id="descripcionProducto"></textarea></label>
+  <label>Foto:<input type="file" id="foto" accept="image/*"></label>
+  <label>Turno Disponible:<select id="turno" required></select></label>
+  <button type="submit">Apartar Turno</button>
+  <button type="button" onclick="limpiarCampos()">Limpiar</button>
+</form>
+
+<h3>Turnos Disponibles</h3>
+<ul id="turnosDisponibles"></ul>
+<button class="admin" type="button" onclick="limpiarHistorial()">🧹 Limpiar Historial (Admin)</button>
+
+<a href="#" id="enlace-ver-mas">Ver más</a>
+
+<div id="contenido-oculto">
+  <h1>Compra a domicilio</h1>
+  <div class="catalogo" id="catalogo"></div>
+</div>
+
+<script>
+const horarios = [
+  "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
+  "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM",
+  "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM",
+  "09:00 PM", "10:00 PM"
+];
+
+const CONTRASENA_ADMIN = "santiago123";
+let turnosTomados = JSON.parse(localStorage.getItem("turnos")) || [];
+
+function actualizarTurnos() {
+  const turnosDisponibles = horarios.filter(h => !turnosTomados.some(t => t.turno === h));
+  const select = document.getElementById("turno");
+  const lista = document.getElementById("turnosDisponibles");
+  select.innerHTML = "";
+  lista.innerHTML = "";
+  if (turnosDisponibles.length === 0) {
+    let aviso = document.createElement("li");
+    aviso.textContent = "🚫 No hay turnos disponibles por ahora.";
+    lista.appendChild(aviso);
+  } else {
+    turnosDisponibles.forEach(turno => {
+      let option = document.createElement("option");
+      option.value = turno;
+      option.textContent = turno;
+      select.appendChild(option);
+      let li = document.createElement("li");
+      li.textContent = turno;
+      lista.appendChild(li);
+    });
+  }
+}
+
+function limpiarCampos() {
+  document.getElementById("formularioTurno").reset();
+}
+
+document.getElementById("formularioTurno").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const nombre = document.getElementById("nombre").value;
+  const telefono = document.getElementById("telefono").value;
+  const descripcionProducto = document.getElementById("descripcionProducto").value;
+  const turno = document.getElementById("turno").value;
+  const fotoInput = document.getElementById("foto");
+  const foto = fotoInput.files.length > 0 ? fotoInput.files[0].name : "";
+  const nuevoTurno = { nombre, telefono, descripcion: descripcionProducto, turno, foto };
+  turnosTomados.push(nuevoTurno);
+  localStorage.setItem("turnos", JSON.stringify(turnosTomados));
+  const mensaje = `📢 Se ha apartado un turno:\n🕒 Turno: ${turno}\n👤 Nombre: ${nombre}\n📞 Tel: ${telefono}`;
+  const numeroWhatsApp = "573001118739";
+  const url = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+  window.open(url, "_blank");
+  alert("✅ Turno reservado correctamente.");
+  limpiarCampos();
+  if (turnosTomados.length >= horarios.length) {
+    alert("⚠️ Todos los turnos han sido tomados. Solo un administrador puede reiniciarlos.");
+  }
+  actualizarTurnos();
+});
+
+function limpiarHistorial() {
+  const clave = prompt("🔐 Ingrese la contraseña de administrador:");
+  if (clave === CONTRASENA_ADMIN) {
+    if (confirm("¿Está seguro de limpiar todos los turnos y reiniciar la lista?")) {
+      localStorage.removeItem("turnos");
+      turnosTomados = [];
+      alert("✅ Historial limpiado. Todos los turnos están disponibles nuevamente.");
+      actualizarTurnos();
+    }
+  } else {
+    alert("❌ Contraseña incorrecta.");
+  }
+}
+
+const enlace = document.getElementById('enlace-ver-mas');
+const contenido = document.getElementById('contenido-oculto');
+enlace.addEventListener('click', function(e) {
+  e.preventDefault();
+  if (contenido.style.display === 'none' || contenido.style.display === '') {
+    contenido.style.display = 'block';
+    enlace.textContent = 'Ver menos';
+  } else {
+    contenido.style.display = 'none';
+    enlace.textContent = 'Ver más';
+  }
+});
+
+const productos = [
+  {
+    nombre: "Comboestelar",
+    descripcion: "Hamburguesa, gaseosa, salsa espacial",
+    precio: 20000,
+    imagen: "Comboestelar.jpg"
+  }
+];
+
+const catalogo = document.getElementById("catalogo");
+productos.forEach((producto, index) => {
+  const div = document.createElement("div");
+  div.className = "producto";
+  div.innerHTML = `
+    <img src="${producto.imagen}" alt="${producto.nombre}">
+    <h3>${producto.nombre}</h3>
+    <p>${producto.descripcion}</p>
+    <div class="precio">Precio: $${producto.precio.toLocaleString('es-CO')}</div>
+    <input type="number" min="1" value="1" id="cantidad-${index}" placeholder="Cantidad">
+    <input type="text" placeholder="Tu nombre" id="nombre-${index}">
+    <input type="tel" placeholder="WhatsApp" id="telefono-${index}">
+    <input type="text" placeholder="Dirección de envío" id="direccion-${index}">
+    <select id="pago-${index}">
+      <option value="Nequi">Nequi</option>
+      <option value="Daviplata">Daviplata</option>
+      <option value="Tarjeta">Tarjeta</option>
+    </select>
+    <button onclick="comprar(${index})">Comprar por WhatsApp</button>
+  `;
+  catalogo.appendChild(div);
+});
+
+function comprar(index) {
+  const cantidad = document.getElementById(`cantidad-${index}`).value;
+  const nombre = document.getElementById(`nombre-${index}`).value.trim();
+  const telefono = document.getElementById(`telefono-${index}`).value.trim();
+  const direccion = document.getElementById(`direccion-${index}`).value.trim();
+  const pago = document.getElementById(`pago-${index}`).value;
+  if (!nombre || !telefono || !direccion || cantidad < 1) {
+    alert("Completa todos los campos correctamente.");
+    return;
+  }
+  const producto = productos[index];
+  const total = producto.precio * cantidad;
+  const mensaje = `Hola, quiero comprar ${cantidad} unidad(es) de ${producto.nombre}.
+Nombre: ${nombre}
+Teléfono: ${telefono}
+Dirección: ${direccion}
+Método de pago: ${pago}
+Total: $${total.toLocaleString('es-CO')} COP`;
+  const whatsapp = `https://wa.me/573001118739?text=${encodeURIComponent(mensaje)}`;
+  window.open(whatsapp, "_blank");
+}
+
+actualizarTurnos();
+</script>
+</body>
+</html>
